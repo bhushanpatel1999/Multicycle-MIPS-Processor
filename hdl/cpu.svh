@@ -42,3 +42,8 @@
 `define OP_JAL 6'b000011 // reg[31] = pc + 8, pc = addr
 
 `define OP_RTYPE 6'b000000 // R-Type instruction
+
+// States
+`define S0 4'b0000
+`define S1 4'b0001
+`define S2 4'b0010

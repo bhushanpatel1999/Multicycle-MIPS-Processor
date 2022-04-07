@@ -75,5 +75,19 @@ module cpu
     // Register to hold ALU value
     reg_en ALU_value (.clk(clk_100M), .rst(rst), .en(clk_en), .d(ALUResult), .q(ALU_out));
     
+    // Declare controller
+    // TODO: Figure out PCSrc, IRWrite and PCWrite variables
+    controller cpu_controller (.rst(rst), 
+        .clk(clk_100M), 
+        .clk_en(clk_en),
+        .opcode(IR_out[31:26]), 
+        .funct(IR_out[5:0]), 
+        .ALUSrcA(SrcA),
+        .ALUSrcB(SrcB),
+        .PCSrc(),
+        .IRWrite(),
+        .PCWrite(),
+        .RegWrite(RegWrite),
+        .ALUControl(ALUControl));
     
 endmodule
