@@ -10,7 +10,11 @@ module cpu
         // on the FPGA (only useful in synthesis)
         input logic [4:0] rdbg_addr,
         output logic [31:0] rdbg_data,
-        output logic [31:0] instr
+        output logic [31:0] instr,
+        
+        // Testing
+        output logic [31:0] regA_data,
+        output logic [31:0] regB_data
     );
     // The CPU interfaces with main memory which is enabled by the
     // inputs and outputs of this module (r_data, wr_en, mem_addr, w_data)
@@ -33,4 +37,43 @@ module cpu
     // provided assembler) in asm/instr.mem and it will be automatically
     // loaded into main memory starting at address 0x00400000. Make sure the memory
     // file is imported into Vivado first (`./tcl.sh refresh`).
+    
+    // Testing fetching instructions
+    
+    // PC register
+    logic [31:0] PC_out;
+    logic [31:0] ALUResult;
+    reg_en #(.INIT(`I_START_ADDRESS)) pc_reg (.clk(clk_100M), .rst(rst), .en(clk_en), .d(ALUResult), .q(mem_addr));
+    
+    // Instruction register
+    logic [31:0] IR_out;
+    reg_en instr_reg (.clk(clk_100M), .rst(rst), .en(32'd1), .d(r_data), .q(IR_out));
+    
+    // Register file
+    logic [31:0] regA_out;
+    logic [31:0] regB_out;
+    logic [31:0] ALU_out;
+    logic RegWrite;
+    assign RegWrite = 1'b1;
+    reg_file register_file (.clk(clk_100M), .wr_en(RegWrite), .r0_addr(IR_out[25:21]), 
+    .r1_addr(IR_out[20:16]), .w_addr(IR_out[15:11]), .w_data(ALU_out), .r0_data(regA_data), .r1_data(regB_data));
+    
+    // Muxes for both ALU inputs
+    logic [31:0] SrcA;
+    logic [31:0] SrcB;
+//    logic ALUSrcA;
+//    assign ALUSrcA = 1'b1;
+    mux_2 mux_srcA (.a(PC_out), .b(regA_out), .sel(32'd1), .f(SrcA));
+    mux_2 mux_srcB (.a(regB_out), .b(32'd4), .sel(32'd0), .f(SrcB));
+    
+    // ALU 
+    logic zero_flag;
+    logic [3:0] ALUControl;
+    assign ALUControl = `ALU_NOR;
+    alu alu_main (.x(SrcA), .y(SrcB), .op(ALUControl), .z(ALUResult), .zero(zero_flag));
+    
+    // Register to hold ALU value
+    reg_en ALU_value (.clk(clk_100M), .rst(rst), .en(clk_en), .d(ALUResult), .q(ALU_out));
+    
+    
 endmodule
