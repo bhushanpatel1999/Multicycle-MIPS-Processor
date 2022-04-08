@@ -40,53 +40,54 @@ module cpu
     
     // Testing fetching instructions
     
-    // PC register
-    logic [31:0] PC_out;
-    logic [31:0] ALUResult;
-    reg_en #(.INIT(`I_START_ADDRESS)) pc_reg (.clk(clk_100M), .rst(rst), .en(clk_en), .d(ALUResult), .q(mem_addr));
+    // FLOW: Set next PC register
+    logic PCWrite;
+    logic [31:0] ALUResult; // Get ALUResult
+    reg_en #(.INIT(`I_START_ADDRESS)) pc_reg (.clk(clk_100M), .rst(rst), .en(PCWrite), .d(ALUResult), .q(mem_addr));
     
-    // Instruction register
-    logic [31:0] IR_out;
-    reg_en instr_reg (.clk(clk_100M), .rst(rst), .en(32'd1), .d(r_data), .q(IR_out));
+    // FLOW: Get/write instruction register
+    logic IRWrite; // IR write variable
+    logic [31:0] IR_out; // Instructrion address
+    reg_en instr_reg (.clk(clk_100M), .rst(rst), .en(IRWrite), .d(r_data), .q(IR_out));
     
-    // Register file
-    logic [31:0] regA_out;
+    // FLOW: Register file
+    logic RegWrite; // Register write variable
+    logic [31:0] regA_out; 
     logic [31:0] regB_out;
-    logic [31:0] ALU_out;
-    logic RegWrite;
-    assign RegWrite = 1'b1;
+    // logic [31:0] ALU_out;
     reg_file register_file (.clk(clk_100M), .wr_en(RegWrite), .r0_addr(IR_out[25:21]), 
-    .r1_addr(IR_out[20:16]), .w_addr(IR_out[15:11]), .w_data(ALU_out), .r0_data(regA_data), .r1_data(regB_data));
+    .r1_addr(IR_out[20:16]), .w_addr(IR_out[15:11]), .w_data(ALUResult), .r0_data(regA_data), .r1_data(regB_data));
     
-    // Muxes for both ALU inputs
+    // FLOW: Muxes for both ALU inputs
+    logic ALUSrcA;
+    logic ALUSrcB;
     logic [31:0] SrcA;
     logic [31:0] SrcB;
-//    logic ALUSrcA;
-//    assign ALUSrcA = 1'b1;
-    mux_2 mux_srcA (.a(PC_out), .b(regA_out), .sel(32'd1), .f(SrcA));
-    mux_2 mux_srcB (.a(regB_out), .b(32'd4), .sel(32'd0), .f(SrcB));
+    mux_2 mux_srcA (.a(mem_addr), .b(regA_out), .sel(ALUSrcA), .f(SrcA));
+    mux_2 mux_srcB (.a(regB_out), .b(32'd4), .sel(ALUSrcB), .f(SrcB));
     
-    // ALU 
+    // FLOW: ALU 
     logic zero_flag;
     logic [3:0] ALUControl;
-    assign ALUControl = `ALU_NOR;
     alu alu_main (.x(SrcA), .y(SrcB), .op(ALUControl), .z(ALUResult), .zero(zero_flag));
     
-    // Register to hold ALU value
-    reg_en ALU_value (.clk(clk_100M), .rst(rst), .en(clk_en), .d(ALUResult), .q(ALU_out));
+    // FLOW: Register to hold ALU value
+    // reg_en ALU_value (.clk(clk_100M), .rst(rst), .en(clk_en), .d(ALUResult), .q(ALU_out));
     
-    // Declare controller
-    // TODO: Figure out PCSrc, IRWrite and PCWrite variables
+    // FLOW: Calculate next PC
+    // logic PCSrc;
+    // mux_2 mux_pcSrc (.a(ALUResult), .b(ALU_out), .sel(PCSrc), .f(PCNext));
+    
+    // FLOW: Declare controller
     controller cpu_controller (.rst(rst), 
         .clk(clk_100M), 
         .clk_en(clk_en),
         .opcode(IR_out[31:26]), 
         .funct(IR_out[5:0]), 
-        .ALUSrcA(SrcA),
-        .ALUSrcB(SrcB),
-        .PCSrc(),
-        .IRWrite(),
-        .PCWrite(),
+        .ALUSrcA(ALUSrcA),
+        .ALUSrcB(ALUSrcB),
+        .IRWrite(IRWrite),
+        .PCWrite(PCWrite),
         .RegWrite(RegWrite),
         .ALUControl(ALUControl));
     
