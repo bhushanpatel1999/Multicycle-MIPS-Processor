@@ -52,7 +52,7 @@ module cpu_tb();
 
     initial begin
         rst <= 1;
-        # 22;
+        # 10;
         rst <= 0;
     end
 

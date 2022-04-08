@@ -56,15 +56,18 @@ module cpu
     logic [31:0] regB_out;
     // logic [31:0] ALU_out;
     reg_file register_file (.clk(clk_100M), .wr_en(RegWrite), .r0_addr(IR_out[25:21]), 
-    .r1_addr(IR_out[20:16]), .w_addr(IR_out[15:11]), .w_data(ALUResult), .r0_data(regA_data), .r1_data(regB_data));
+    .r1_addr(IR_out[20:16]), .w_addr(IR_out[15:11]), .w_data(ALUResult), .r0_data(regA_out), .r1_data(regB_out));
     
     // FLOW: Muxes for both ALU inputs
-    logic ALUSrcA;
-    logic ALUSrcB;
+    logic [1:0] ALUSrcA;
+    logic [1:0] ALUSrcB;
     logic [31:0] SrcA;
     logic [31:0] SrcB;
-    mux_2 mux_srcA (.a(mem_addr), .b(regA_out), .sel(ALUSrcA), .f(SrcA));
-    mux_2 mux_srcB (.a(regB_out), .b(32'd4), .sel(ALUSrcB), .f(SrcB));
+    logic [31:0] shamt;
+    assign shamt[4:0] = IR_out[10:6];
+    assign shamt[31:5] = '0;
+    mux_4 mux_srcA (.a(mem_addr), .b(regA_out), .c(regB_out), .sel(ALUSrcA), .f(SrcA));
+    mux_4 mux_srcB (.a(regB_out), .b(32'd4), .c(shamt), .sel(ALUSrcB), .f(SrcB));
     
     // FLOW: ALU 
     logic zero_flag;

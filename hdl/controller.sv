@@ -27,15 +27,16 @@ module controller
         input logic clk_en,
         input logic [5:0] opcode,
         input logic [5:0] funct,
-        output logic ALUSrcA,
-        output logic ALUSrcB,
+        output logic [1:0] ALUSrcA,
+        output logic [1:0] ALUSrcB,
         output logic IRWrite,
         output logic PCWrite,
         output logic RegWrite,
         output logic [3:0] ALUControl
     );
     
-    logic [3:0] state, next_state;
+    logic [3:0] state;
+    logic [3:0]next_state;
     
     // FLOW: Synchronous logic (update the state on clock edge)
     always_ff @(posedge clk, posedge rst) begin
@@ -51,8 +52,8 @@ module controller
     always_comb begin
         case (state)
             `S0: begin
-                ALUSrcA = 0;
-                ALUSrcB = 1;
+                ALUSrcA = 00;
+                ALUSrcB = 01;
                 IRWrite = 1;
                 PCWrite = 1;
                 RegWrite = 0;
@@ -60,22 +61,64 @@ module controller
                 next_state = `S1;
             end
             `S1: begin
-                ALUSrcA = 1;
-                ALUSrcB = 0;
                 IRWrite = 0;
                 PCWrite = 0;
                 case (funct)
-                   `F_AND : ALUControl = `ALU_AND;
-                   `F_OR : ALUControl = `ALU_OR;
-                   `F_NOR : ALUControl = `ALU_NOR;
-                   `F_XOR : ALUControl = `ALU_XOR;
-                   `F_SLL : ALUControl = `ALU_SLL;
-                   `F_SRL : ALUControl = `ALU_SRL;
-                   `F_SRA : ALUControl = `ALU_SRA;
-                   `F_SLT : ALUControl = `ALU_SLT;
-                   `F_ADD : ALUControl = `ALU_ADD;
-                   `F_SUB : ALUControl = `ALU_SUB;
-                   default : ALUControl = `ALU_AND;
+                   `F_AND: begin 
+                        ALUControl = `ALU_AND; 
+                        ALUSrcA = 01;
+                        ALUSrcB = 00;
+                    end
+                   `F_OR: begin 
+                        ALUControl = `ALU_OR; 
+                        ALUSrcA = 01;
+                        ALUSrcB = 00;
+                    end 
+                   `F_NOR: begin 
+                        ALUControl = `ALU_NOR; 
+                        ALUSrcA = 01;
+                        ALUSrcB = 00;
+                    end
+                   `F_XOR: begin 
+                        ALUControl = `ALU_XOR;
+                        ALUSrcA = 01;
+                        ALUSrcB = 00;
+                    end
+                   `F_SLL: begin
+                        ALUControl = `ALU_SLL;
+                        ALUSrcA = 10;
+                        ALUSrcB = 10;
+                    end
+                   `F_SRL: begin 
+                        ALUControl = `ALU_SRL; 
+                        ALUSrcA = 10;
+                        ALUSrcB = 10;
+                    end
+                   `F_SRA: begin 
+                        ALUControl = `ALU_SRA; 
+                        ALUSrcA = 10;
+                        ALUSrcB = 10;
+                    end
+                   `F_SLT: begin 
+                        ALUControl = `ALU_SLT; 
+                        ALUSrcA = 01;
+                        ALUSrcB = 00;
+                    end
+                   `F_ADD: begin 
+                        ALUControl = `ALU_ADD; 
+                        ALUSrcA = 01;
+                        ALUSrcB = 00;
+                    end
+                   `F_SUB: begin 
+                        ALUControl = `ALU_SUB; 
+                        ALUSrcA = 01;
+                        ALUSrcB = 00;
+                    end
+                   default: begin 
+                        ALUControl = `ALU_AND;
+                        ALUSrcA = 01;
+                        ALUSrcB = 00; 
+                    end
                  endcase
                  next_state = `S2;
             end
@@ -84,8 +127,8 @@ module controller
                 next_state = `S0;
             end
             default: begin
-                ALUSrcA = 0;
-                ALUSrcB = 1;
+                ALUSrcA = 00;
+                ALUSrcB = 01;
                 IRWrite = 1;
                 PCWrite = 1;
                 RegWrite = 0;
