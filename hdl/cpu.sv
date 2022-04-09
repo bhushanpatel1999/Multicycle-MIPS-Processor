@@ -10,7 +10,11 @@ module cpu
         // on the FPGA (only useful in synthesis)
         input logic [4:0] rdbg_addr,
         output logic [31:0] rdbg_data,
-        output logic [31:0] instr
+        output logic [31:0] instr,
+        
+        // Testing
+        output logic [31:0] regA_data,
+        output logic [31:0] regB_data
     );
     // The CPU interfaces with main memory which is enabled by the
     // inputs and outputs of this module (r_data, wr_en, mem_addr, w_data)
@@ -33,4 +37,61 @@ module cpu
     // provided assembler) in asm/instr.mem and it will be automatically
     // loaded into main memory starting at address 0x00400000. Make sure the memory
     // file is imported into Vivado first (`./tcl.sh refresh`).
+    
+    // Testing fetching instructions
+    
+    // FLOW: Set next PC register
+    logic PCWrite;
+    logic [31:0] ALUResult; // Get ALUResult
+    reg_en #(.INIT(`I_START_ADDRESS)) pc_reg (.clk(clk_100M), .rst(rst), .en(PCWrite), .d(ALUResult), .q(mem_addr));
+    
+    // FLOW: Get/write instruction register
+    logic IRWrite; // IR write variable
+    logic [31:0] IR_out; // Instructrion address
+    reg_en instr_reg (.clk(clk_100M), .rst(rst), .en(IRWrite), .d(r_data), .q(IR_out));
+    
+    // FLOW: Register file
+    logic RegWrite; // Register write variable
+    logic [31:0] regA_out; 
+    logic [31:0] regB_out;
+    // logic [31:0] ALU_out;
+    reg_file register_file (.clk(clk_100M), .wr_en(RegWrite), .r0_addr(IR_out[25:21]), 
+    .r1_addr(IR_out[20:16]), .w_addr(IR_out[15:11]), .w_data(ALUResult), .r0_data(regA_out), .r1_data(regB_out));
+    
+    // FLOW: Muxes for both ALU inputs
+    logic [1:0] ALUSrcA;
+    logic [1:0] ALUSrcB;
+    logic [31:0] SrcA;
+    logic [31:0] SrcB;
+    logic [31:0] shamt;
+    assign shamt[4:0] = IR_out[10:6];
+    assign shamt[31:5] = '0;
+    mux_4 mux_srcA (.a(mem_addr), .b(regA_out), .c(regB_out), .sel(ALUSrcA), .f(SrcA));
+    mux_4 mux_srcB (.a(regB_out), .b(32'd4), .c(shamt), .sel(ALUSrcB), .f(SrcB));
+    
+    // FLOW: ALU 
+    logic zero_flag;
+    logic [3:0] ALUControl;
+    alu alu_main (.x(SrcA), .y(SrcB), .op(ALUControl), .z(ALUResult), .zero(zero_flag));
+    
+    // FLOW: Register to hold ALU value
+    // reg_en ALU_value (.clk(clk_100M), .rst(rst), .en(clk_en), .d(ALUResult), .q(ALU_out));
+    
+    // FLOW: Calculate next PC
+    // logic PCSrc;
+    // mux_2 mux_pcSrc (.a(ALUResult), .b(ALU_out), .sel(PCSrc), .f(PCNext));
+    
+    // FLOW: Declare controller
+    controller cpu_controller (.rst(rst), 
+        .clk(clk_100M), 
+        .clk_en(clk_en),
+        .opcode(IR_out[31:26]), 
+        .funct(IR_out[5:0]), 
+        .ALUSrcA(ALUSrcA),
+        .ALUSrcB(ALUSrcB),
+        .IRWrite(IRWrite),
+        .PCWrite(PCWrite),
+        .RegWrite(RegWrite),
+        .ALUControl(ALUControl));
+    
 endmodule
