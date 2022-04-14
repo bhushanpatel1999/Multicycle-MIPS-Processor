@@ -13,6 +13,9 @@
 `define ALU_SLL 4'b1001
 `define ALU_SRA 4'b1010
 
+// R-Type op-code
+`define OP_RTYPE 6'b000000
+
 // R-Type funct
 `define F_AND 6'b100100 // rd = rs & rt
 `define F_OR  6'b100101 // rd = rs | rt
@@ -47,3 +50,5 @@
 `define S0 4'b0000
 `define S1 4'b0001
 `define S2 4'b0010
+`define S3 4'b0011
+`define S4 4'b0100

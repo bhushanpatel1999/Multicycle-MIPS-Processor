@@ -50,13 +50,18 @@ module cpu
     logic [31:0] IR_out; // Instructrion address
     reg_en instr_reg (.clk(clk_100M), .rst(rst), .en(IRWrite), .d(r_data), .q(IR_out));
     
+    // FLOW: Mux for write register address
+    logic write_addr;
+    logic RegDst;
+    mux_2_5bit write_addr_mux(.a(IR_out[20:16]), .b(IR_out[15:11]), .sel(RegDst), .f(write_addr));
+    
     // FLOW: Register file
     logic RegWrite; // Register write variable
     logic [31:0] regA_out; 
     logic [31:0] regB_out;
     // logic [31:0] ALU_out;
     reg_file register_file (.clk(clk_100M), .wr_en(RegWrite), .r0_addr(IR_out[25:21]), 
-    .r1_addr(IR_out[20:16]), .w_addr(IR_out[15:11]), .w_data(ALUResult), .r0_data(regA_out), .r1_data(regB_out));
+    .r1_addr(IR_out[20:16]), .w_addr(write_addr), .w_data(ALUResult), .r0_data(regA_out), .r1_data(regB_out));
     
     // FLOW: Muxes for both ALU inputs
     logic [1:0] ALUSrcA;
@@ -64,10 +69,18 @@ module cpu
     logic [31:0] SrcA;
     logic [31:0] SrcB;
     logic [31:0] shamt;
+    
+    // FLOW: Zero-extend for shift amount
     assign shamt[4:0] = IR_out[10:6];
     assign shamt[31:5] = '0;
-    mux_4 mux_srcA (.a(mem_addr), .b(regA_out), .c(regB_out), .sel(ALUSrcA), .f(SrcA));
-    mux_4 mux_srcB (.a(regB_out), .b(32'd4), .c(shamt), .sel(ALUSrcB), .f(SrcB));
+    
+    // FLOW: Sign-extend for imm use
+    logic [31:0] SignImm;
+    assign SignImm[15:0]  = IR_out[15:0];
+    assign SignImm[31:16] = IR_out[15];
+    
+    mux_4 mux_srcA (.a(mem_addr), .b(regA_out), .c(regB_out), .d(1'b1), .sel(ALUSrcA), .f(SrcA));
+    mux_4 mux_srcB (.a(regB_out), .b(32'd4), .c(shamt), .d(SignImm), .sel(ALUSrcB), .f(SrcB));
     
     // FLOW: ALU 
     logic zero_flag;
@@ -92,6 +105,7 @@ module cpu
         .IRWrite(IRWrite),
         .PCWrite(PCWrite),
         .RegWrite(RegWrite),
+        .RegDst(RegDst),
         .ALUControl(ALUControl));
     
 endmodule
