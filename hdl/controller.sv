@@ -155,50 +155,25 @@ module controller
                         ALUSrcA = 01;
                         ALUSrcB = 11;
                     end
-                   `F_OR: begin 
-                        ALUControl = `ALU_OR; 
+                   `OP_ANDI: begin 
+                        ALUControl = `ALU_AND; 
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 11;
                     end 
-                   `F_NOR: begin 
-                        ALUControl = `ALU_NOR; 
+                   `OP_XORI: begin 
+                        ALUControl = `ALU_XOR; 
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 11;
                     end
-                   `F_XOR: begin 
-                        ALUControl = `ALU_XOR;
+                   `OP_ORI: begin 
+                        ALUControl = `ALU_OR;
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 11;
                     end
-                   `F_SLL: begin
-                        ALUControl = `ALU_SLL;
-                        ALUSrcA = 10;
-                        ALUSrcB = 10;
-                    end
-                   `F_SRL: begin 
-                        ALUControl = `ALU_SRL; 
-                        ALUSrcA = 10;
-                        ALUSrcB = 10;
-                    end
-                   `F_SRA: begin 
-                        ALUControl = `ALU_SRA; 
-                        ALUSrcA = 10;
-                        ALUSrcB = 10;
-                    end
-                   `F_SLT: begin 
-                        ALUControl = `ALU_SLT; 
+                   `OP_SLTI: begin
+                        ALUControl = `ALU_SLT;
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
-                    end
-                   `F_ADD: begin 
-                        ALUControl = `ALU_ADD; 
-                        ALUSrcA = 01;
-                        ALUSrcB = 00;
-                    end
-                   `F_SUB: begin 
-                        ALUControl = `ALU_SUB; 
-                        ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 11;
                     end
                    default: begin 
                         ALUControl = `ALU_AND;
