@@ -34,9 +34,8 @@ module cpu
     // loaded into main memory starting at address 0x00400000. Make sure the memory
     // file is imported into Vivado first (`./tcl.sh refresh`).
     
-    // Testing fetching instructions
     
-    // FLOW: Set next PC register
+    // FLOW: PC register
     logic PCEn;
     logic [31:0] ALUResult; 
     logic [31:0] PCreg_out;
@@ -46,7 +45,6 @@ module cpu
     // Control signal for memory write
     logic MemWrite;
     assign wr_en = MemWrite;
-    
     
     // FLOW: Get/write instruction register
     logic IRWrite; // IR write variable
@@ -145,7 +143,7 @@ module cpu
     or g5 (g5_out, g3_out, g4_out);
     or g6 (PCEn, PCWrite, g5_out);
     
-    // FLOW: Post-PC register for IorD (lw/sw)
+    // FLOW: Post-PC mux for IorD (lw/sw)
     logic IorD;
     logic [31:0] IorD_out;
     mux_2 IorD_mux (.a(PCreg_out), .b(ALU_reg_out), .sel(IorD), .f(mem_addr));
