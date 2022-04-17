@@ -41,16 +41,16 @@ module mux_4_5bit
         input logic [4:0] a,
         input logic [4:0] b,
         input logic [4:0] c,
-        input logic sel,
+        input logic [1:0] sel,
         output logic [4:0] f
     );
     
     always_comb begin
-        if (sel == 00)
+        if (sel == 2'b00)
             f = a;
-        else if (sel == 01)
+        else if (sel == 2'b01)
             f = b;
-        else if (sel == 10)
+        else if (sel == 2'b10)
             f = c;
     end
 endmodule
@@ -89,15 +89,15 @@ module mux_8
     );
     
     always_comb begin
-        if (sel == 2'b000)
+        if (sel == 3'b000)
             f = a;
-        else if (sel == 2'b001)
+        else if (sel == 3'b001)
             f = b;
-        else if (sel == 2'b010)
+        else if (sel == 3'b010)
             f = c;
-        else if (sel == 2'b011)
+        else if (sel == 3'b011)
             f = d;
-        else if (sel == 2'b100)
+        else if (sel == 3'b100)
             f = e;
     end
 endmodule
