@@ -23,10 +23,7 @@ module cpu_tb();
     logic [31:0] instr;
     logic [31:0] rdbg_addr;
     logic [31:0] rdbg_data;
-    
-    //Testing
-    logic [31:0] regA_data;
-    logic [31:0] regB_data;
+   
 
     rw_ram ram_unit (.clk_100M(clk_100M),
                      .clk_en(clk_en),
@@ -46,9 +43,7 @@ module cpu_tb();
                   .w_data(w_data),
                   .rdbg_addr(rdbg_addr),
                   .rdbg_data(rdbg_data),
-                  .instr(instr),
-                  .regA_data(regA_data),
-                  .regB_data(regB_data));
+                  .instr(instr));
 
     initial begin
         rst <= 1;

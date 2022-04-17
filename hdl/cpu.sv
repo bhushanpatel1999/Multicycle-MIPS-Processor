@@ -10,11 +10,7 @@ module cpu
         // on the FPGA (only useful in synthesis)
         input logic [4:0] rdbg_addr,
         output logic [31:0] rdbg_data,
-        output logic [31:0] instr,
-        
-        // Testing
-        output logic [31:0] regA_data,
-        output logic [31:0] regB_data
+        output logic [31:0] instr
     );
     // The CPU interfaces with main memory which is enabled by the
     // inputs and outputs of this module (r_data, wr_en, mem_addr, w_data)
@@ -38,36 +34,78 @@ module cpu
     // loaded into main memory starting at address 0x00400000. Make sure the memory
     // file is imported into Vivado first (`./tcl.sh refresh`).
     
-    // Testing fetching instructions
     
-    // FLOW: Set next PC register
-    logic PCWrite;
-    logic [31:0] ALUResult; // Get ALUResult
-    reg_en #(.INIT(`I_START_ADDRESS)) pc_reg (.clk(clk_100M), .rst(rst), .en(PCWrite), .d(ALUResult), .q(mem_addr));
+    // FLOW: PC register
+    logic PCEn;
+    logic [31:0] ALUResult; 
+    logic [31:0] PCreg_out;
+    logic [31:0] PCSrc_out;
+    reg_en #(.INIT(`I_START_ADDRESS)) pc_reg (.clk(clk_100M), .rst(rst), .en(PCEn), .d(PCSrc_out), .q(PCreg_out));
+    
+    // Control signal for memory write
+    logic MemWrite;
+    assign wr_en = MemWrite;
     
     // FLOW: Get/write instruction register
     logic IRWrite; // IR write variable
     logic [31:0] IR_out; // Instructrion address
     reg_en instr_reg (.clk(clk_100M), .rst(rst), .en(IRWrite), .d(r_data), .q(IR_out));
     
+    // FLOW: Data register
+    logic [31:0] datareg_out;
+    reg_en data_reg (.clk(clk_100M), .rst(rst), .en(clk_en), .d(r_data), .q(datareg_out));
+    
+    // FLOW: Mux for write register address
+    logic [4:0] write_addr;
+    logic [1:0] RegDst;
+    mux_4_5bit write_addr_mux (.a(IR_out[20:16]), .b(IR_out[15:11]), .c(5'b11111), .sel(RegDst), .f(write_addr));
+    
+    // FLOW: Mux for write register data
+    logic MemtoReg;
+    logic [31:0] ALU_reg_out;
+    logic [31:0] write_data;
+    mux_2 write_data_mux (.a(ALU_reg_out), .b(datareg_out), .sel(MemtoReg), .f(write_data));
+    
     // FLOW: Register file
-    logic RegWrite; // Register write variable
+    logic RegWrite; 
     logic [31:0] regA_out; 
     logic [31:0] regB_out;
-    // logic [31:0] ALU_out;
     reg_file register_file (.clk(clk_100M), .wr_en(RegWrite), .r0_addr(IR_out[25:21]), 
-    .r1_addr(IR_out[20:16]), .w_addr(IR_out[15:11]), .w_data(ALUResult), .r0_data(regA_out), .r1_data(regB_out));
+    .r1_addr(IR_out[20:16]), .w_addr(write_addr), .w_data(write_data), .r0_data(regA_out), .r1_data(regB_out));
+    
+    // Output data for memory write
+    assign w_data = regB_out;
     
     // FLOW: Muxes for both ALU inputs
     logic [1:0] ALUSrcA;
-    logic [1:0] ALUSrcB;
+    logic [2:0] ALUSrcB;
     logic [31:0] SrcA;
     logic [31:0] SrcB;
     logic [31:0] shamt;
+    
+    // FLOW: Zero-extend for shift amount
     assign shamt[4:0] = IR_out[10:6];
     assign shamt[31:5] = '0;
-    mux_4 mux_srcA (.a(mem_addr), .b(regA_out), .c(regB_out), .sel(ALUSrcA), .f(SrcA));
-    mux_4 mux_srcB (.a(regB_out), .b(32'd4), .c(shamt), .sel(ALUSrcB), .f(SrcB));
+    
+    // FLOW: Sign-extend for imm use
+    logic [31:0] SignImm;
+    assign SignImm[15:0]  = IR_out[15:0];
+    
+    generate
+        genvar i;
+        for (i = 0; i < 16; i = i + 1)
+            assign SignImm[i + 16] = IR_out[15]; 
+    endgenerate
+    
+    // FLOW: Shift SignImm for beq/bne address calculation
+    logic [31:0] SignImm_shifted;
+    assign SignImm_shifted[31:2] = SignImm[29:0];
+    assign SignImm_shifted[1] = '0;
+    assign SignImm_shifted[0] = '0;
+    
+    // ALU source muxes
+    mux_4 mux_srcA (.a(mem_addr), .b(regA_out), .c(regB_out), .d(1'b1), .sel(ALUSrcA), .f(SrcA));
+    mux_8 mux_srcB (.a(regB_out), .b(32'd4), .c(SignImm), .d(SignImm_shifted), .e(shamt), .sel(ALUSrcB), .f(SrcB));
     
     // FLOW: ALU 
     logic zero_flag;
@@ -75,11 +113,40 @@ module cpu
     alu alu_main (.x(SrcA), .y(SrcB), .op(ALUControl), .z(ALUResult), .zero(zero_flag));
     
     // FLOW: Register to hold ALU value
-    // reg_en ALU_value (.clk(clk_100M), .rst(rst), .en(clk_en), .d(ALUResult), .q(ALU_out));
+    reg_en ALU_reg (.clk(clk_100M), .rst(rst), .en(clk_en), .d(ALUResult), .q(ALU_reg_out));
     
-    // FLOW: Calculate next PC
-    // logic PCSrc;
-    // mux_2 mux_pcSrc (.a(ALUResult), .b(ALU_out), .sel(PCSrc), .f(PCNext));
+    // FLOW: Logic for jump address calculation
+    logic [31:0] shifted_addr;
+    assign shifted_addr[27:2] = IR_out[25:0];
+    assign shifted_addr[1] = '0;
+    assign shifted_addr[0] = '0;
+    assign shifted_addr[31:28] = mem_addr[31:28];
+    
+    
+    // FLOW: Mux for PCSrc
+    logic [1:0] PCSrc;
+    mux_4 PCSrc_mux (.a(ALUResult), .b(ALU_reg_out), .c(shifted_addr), .d(SrcA), .sel(PCSrc), .f(PCSrc_out));
+    
+    // FLOW: Combinational logic for branching
+    logic BranchType;
+    logic Branch;
+    logic PCWrite;
+    logic g1_out;
+    logic g2_out;
+    logic g3_out;
+    logic g4_out;
+    logic g5_out;
+    and g1 (g1_out, BranchType, zero_flag);
+    nand g2 (g2_out, BranchType, zero_flag);
+    and g3 (g3_out, Branch, g1_out);
+    and g4 (g4_out, Branch, g2_out);
+    or g5 (g5_out, g3_out, g4_out);
+    or g6 (PCEn, PCWrite, g5_out);
+    
+    // FLOW: Post-PC mux for IorD (lw/sw)
+    logic IorD;
+    logic [31:0] IorD_out;
+    mux_2 IorD_mux (.a(PCreg_out), .b(ALU_reg_out), .sel(IorD), .f(mem_addr));
     
     // FLOW: Declare controller
     controller cpu_controller (.rst(rst), 
@@ -87,11 +154,18 @@ module cpu
         .clk_en(clk_en),
         .opcode(IR_out[31:26]), 
         .funct(IR_out[5:0]), 
+        .IorD(IorD),
         .ALUSrcA(ALUSrcA),
         .ALUSrcB(ALUSrcB),
+        .PCSrc(PCSrc),
         .IRWrite(IRWrite),
         .PCWrite(PCWrite),
         .RegWrite(RegWrite),
+        .MemWrite(MemWrite),
+        .RegDst(RegDst),
+        .MemtoReg(MemtoReg),
+        .Branch(Branch),
+        .BranchType(BranchType),
         .ALUControl(ALUControl));
     
 endmodule

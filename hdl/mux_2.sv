@@ -36,11 +36,31 @@ module mux_2
     end
 endmodule
 
+module mux_4_5bit
+    (
+        input logic [4:0] a,
+        input logic [4:0] b,
+        input logic [4:0] c,
+        input logic [1:0] sel,
+        output logic [4:0] f
+    );
+    
+    always_comb begin
+        if (sel == 2'b00)
+            f = a;
+        else if (sel == 2'b01)
+            f = b;
+        else if (sel == 2'b10)
+            f = c;
+    end
+endmodule
+
 module mux_4
     (
         input logic [31:0] a,
         input logic [31:0] b,
         input logic [31:0] c,
+        input logic [31:0] d,
         input logic [1:0] sel,
         output logic [31:0] f
     );
@@ -52,5 +72,32 @@ module mux_4
             f = b;
         else if (sel == 2'b10)
             f = c;
+        else if (sel == 2'b11)
+            f = d;
+    end
+endmodule
+
+module mux_8
+    (
+        input logic [31:0] a,
+        input logic [31:0] b,
+        input logic [31:0] c,
+        input logic [31:0] d,
+        input logic [31:0] e,
+        input logic [2:0] sel,
+        output logic [31:0] f
+    );
+    
+    always_comb begin
+        if (sel == 3'b000)
+            f = a;
+        else if (sel == 3'b001)
+            f = b;
+        else if (sel == 3'b010)
+            f = c;
+        else if (sel == 3'b011)
+            f = d;
+        else if (sel == 3'b100)
+            f = e;
     end
 endmodule
