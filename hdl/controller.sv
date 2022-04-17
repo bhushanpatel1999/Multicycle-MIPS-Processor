@@ -29,7 +29,7 @@ module controller
         input logic [5:0] funct,
         output logic IorD,
         output logic [1:0] ALUSrcA,
-        output logic [1:0] ALUSrcB,
+        output logic [2:0] ALUSrcB,
         output logic [1:0] PCSrc,
         output logic IRWrite,
         output logic PCWrite,
@@ -61,7 +61,7 @@ module controller
             `S0: begin
                 IorD = 0;
                 ALUSrcA = 00;
-                ALUSrcB = 01;
+                ALUSrcB = 001;
                 PCSrc = 00;
                 IRWrite = 1;
                 PCWrite = 1;
@@ -73,7 +73,7 @@ module controller
             end
             `S1: begin
                 ALUSrcA = 00;
-                ALUSrcB = 11;
+                ALUSrcB = 011;
                 IRWrite = 0;
                 PCWrite = 0;
                 case (opcode)
@@ -105,73 +105,73 @@ module controller
                    `F_AND: begin 
                         ALUControl = `ALU_AND; 
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 000;
                         next_state = `S3;
                     end
                    `F_OR: begin 
                         ALUControl = `ALU_OR; 
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 000;
                         next_state = `S3;
                     end 
                    `F_NOR: begin 
                         ALUControl = `ALU_NOR; 
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 000;
                         next_state = `S3;
                     end
                    `F_XOR: begin 
                         ALUControl = `ALU_XOR;
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 000;
                         next_state = `S3;
                     end
                    `F_SLL: begin
                         ALUControl = `ALU_SLL;
                         ALUSrcA = 10;
-                        ALUSrcB = 10;
+                        ALUSrcB = 100;
                         next_state = `S3;
                     end
                    `F_SRL: begin 
                         ALUControl = `ALU_SRL; 
                         ALUSrcA = 10;
-                        ALUSrcB = 10;
+                        ALUSrcB = 100;
                         next_state = `S3;
                     end
                    `F_SRA: begin 
                         ALUControl = `ALU_SRA; 
                         ALUSrcA = 10;
-                        ALUSrcB = 10;
+                        ALUSrcB = 100;
                         next_state = `S3;
                     end
                    `F_SLT: begin 
                         ALUControl = `ALU_SLT; 
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 000;
                         next_state = `S3;
                     end
                    `F_ADD: begin 
                         ALUControl = `ALU_ADD; 
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 000;
                         next_state = `S3;
                     end
                    `F_SUB: begin 
                         ALUControl = `ALU_SUB; 
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 000;
                         next_state = `S3;
                     end
                     `F_JR: begin 
                         ALUControl = `ALU_ADD; 
                         ALUSrcA = 01;
-                        ALUSrcB = 00;
+                        ALUSrcB = 000;
                         next_state = `S11;
                     end
                     default: begin 
                         ALUControl = `ALU_AND;
                         ALUSrcA = 01;
-                        ALUSrcB = 00; 
+                        ALUSrcB = 000; 
                         next_state = `S3;
                     end
                  endcase
@@ -188,32 +188,32 @@ module controller
                    `OP_ANDI: begin 
                         ALUControl = `ALU_AND; 
                         ALUSrcA = 01;
-                        ALUSrcB = 11;
+                        ALUSrcB = 010;
                     end
                    `OP_ORI: begin 
                         ALUControl = `ALU_OR; 
                         ALUSrcA = 01;
-                        ALUSrcB = 11;
+                        ALUSrcB = 010;
                     end 
                    `OP_XORI: begin 
                         ALUControl = `ALU_XOR; 
                         ALUSrcA = 01;
-                        ALUSrcB = 11;
+                        ALUSrcB = 010;
                     end
                    `OP_SLTI: begin 
                         ALUControl = `ALU_SLT;
                         ALUSrcA = 01;
-                        ALUSrcB = 11;
+                        ALUSrcB = 010;
                     end
                    `OP_ADDI: begin
                         ALUControl = `ALU_ADD;
                         ALUSrcA = 01;
-                        ALUSrcB = 11;
+                        ALUSrcB = 010;
                     end
                     default: begin 
                         ALUControl = `ALU_AND;
                         ALUSrcA = 01;
-                        ALUSrcB = 11; 
+                        ALUSrcB = 010; 
                     end
                  endcase
                  next_state = `S5;
@@ -281,7 +281,7 @@ module controller
             end
             `S12: begin
                 ALUSrcA = 00;
-                ALUSrcB = 01;
+                ALUSrcB = 01; 
                 ALUControl = `ALU_ADD;
                 next_state = `S13;
             end

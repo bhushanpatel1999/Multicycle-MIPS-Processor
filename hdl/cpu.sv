@@ -10,11 +10,7 @@ module cpu
         // on the FPGA (only useful in synthesis)
         input logic [4:0] rdbg_addr,
         output logic [31:0] rdbg_data,
-        output logic [31:0] instr,
-        
-        // Testing
-        output logic [31:0] regA_data,
-        output logic [31:0] regB_data
+        output logic [31:0] instr
     );
     // The CPU interfaces with main memory which is enabled by the
     // inputs and outputs of this module (r_data, wr_en, mem_addr, w_data)
@@ -64,7 +60,7 @@ module cpu
     // FLOW: Mux for write register address
     logic [4:0] write_addr;
     logic [1:0] RegDst;
-    mux_2_5bit write_addr_mux (.a(IR_out[20:16]), .b(IR_out[15:11]), .c(5'b11111), .sel(RegDst), .f(write_addr));
+    mux_4_5bit write_addr_mux (.a(IR_out[20:16]), .b(IR_out[15:11]), .c(5'b11111), .sel(RegDst), .f(write_addr));
     
     // FLOW: Mux for write register data
     logic MemtoReg;
@@ -111,7 +107,7 @@ module cpu
     
     // ALU source muxes
     mux_4 mux_srcA (.a(mem_addr), .b(regA_out), .c(regB_out), .d(1'b1), .sel(ALUSrcA), .f(SrcA));
-    mux_8 mux_srcB (.a(regB_out), .b(32'd4), .c(shamt), .d(SignImm), .e(SignImm_shifted), .sel(ALUSrcB), .f(SrcB));
+    mux_8 mux_srcB (.a(regB_out), .b(32'd4), .c(SignImm), .d(SignImm_shifted), .e(shamt), .sel(ALUSrcB), .f(SrcB));
     
     // FLOW: ALU 
     logic zero_flag;
@@ -160,12 +156,18 @@ module cpu
         .clk_en(clk_en),
         .opcode(IR_out[31:26]), 
         .funct(IR_out[5:0]), 
+        .IorD(IorD),
         .ALUSrcA(ALUSrcA),
         .ALUSrcB(ALUSrcB),
+        .PCSrc(PCSrc),
         .IRWrite(IRWrite),
         .PCWrite(PCWrite),
         .RegWrite(RegWrite),
+        .MemWrite(MemWrite),
         .RegDst(RegDst),
+        .MemtoReg(MemtoReg),
+        .Branch(Branch),
+        .BranchType(BranchType),
         .ALUControl(ALUControl));
     
 endmodule
