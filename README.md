@@ -1,4 +1,4 @@
-# Multicycle-MIPS-Processor
+# Multicycle MIPS Processor
 Building a full-scale MIPS-ISA multicycle processor with a datapath, control unit, and memory.
 
 ## Description
@@ -19,7 +19,7 @@ This is a SystemVerilog-based multicycle processor with registers, coded in Viva
 | `sub`   |         |         |
 | `nop`   |         |         |
 
-The processor is composed of the 3 parts: memory, datapath, and control. The memory is where instructions assembled from a test file are stored. The datapath is the physical connections between the memory, circuit components, the control FSM. The control unit is an FSM that controls the flow of logic along the datapath, which varies with each command. 
+The processor is composed of 3 parts: memory, datapath, and control. The memory is where instructions assembled from a test file are stored. The datapath is the physical connections between the memory, circuit components, the control FSM. The control unit is an FSM that controls the flow of logic along the datapath, which varies with each command. 
 
 ## Getting Started
 
